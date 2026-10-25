@@ -1,0 +1,73 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Agent SDK LESSON 27 · How the app &lt;em&gt;was built.&lt;/em&gt;</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/code-highlighting.css"></head><body><main><div class="brand"><a href="/">How <span>Claude Agent SDK</span> Works</a><span class="badge">LESSON 27 / PERMISSION EVALUATION</span></div><header class="hero"><div><div class="eyebrow">PREDICT · TRACE · VERIFY</div><h1>How the app <em>was built.</em></h1><p class="lead">Every architecture step has source-linked coloured code.</p></div><img src="/astronaut.png" alt="Course astronaut mascot"></header><nav class="nav" aria-label="Application sections"><a href="/">Application lab</a><a href="/learn.html">What you will learn</a><a href="/run.html">How to run</a><a href="/architecture.html">Architecture & workflow</a><a href="/walkthrough.html" aria-current="page">Code walkthrough</a><button id="theme" type="button">Dark mode</button></nav><div class="grid"><article class="card"><span class="number">01</span><h3>Documented pipeline versus observable evidence</h3><p>The six-step diagram is reference guidance. Public events expose hooks, callback invocations, native results and completion, not every internal rule comparison. Reference stage labels describe the configured experiment and do not pretend to be internal SDK telemetry.</p></article><article class="card"><span class="number">02</span><h3>Ask is distinct from hook allow</h3><p>A hook allow does not skip deny or ask rules. The ask experiment uses a bare Write ask rule and a programmed callback that approves only the bounded classroom output. It is not a human approval UI.</p></article><article class="card"><span class="number">03</span><h3>Bare versus scoped deny</h3><p>A bare disallowedTools name removes the tool definition, preventing that attempt. Bash(rm *) keeps Bash available and blocks matching commands as written. It is not a universal detector of every command spelling. The host guard independently restricts this lab to one disposable target.</p></article><article class="card"><span class="number">04</span><h3>File rule details</h3><p>Bare Write ask and allow entries are used here. For path-scoped rules governing built-in writes, current docs specify Edit(path), including Write and NotebookEdit. Do not assume Write(path) works the same way.</p></article><article class="card"><span class="number">05</span><h3>Modes and safe built-ins</h3><p>acceptEdits auto-approves eligible file operations; default can approve safe reads or read-only shell commands without a callback. allowedTools is pre-approval, not a complete tool inventory or universal whitelist. This lab narrows available tools explicitly.</p></article><article class="card"><span class="number">06</span><h3>Warnings are partial diagnostics</h3><p>The SDK can warn for bypass mode or bare allow entries. acceptEdits can skip the callback without that construction-time warning. Matching rules from settings may also affect execution without being visible to the warning check.</p></article><article class="card"><span class="number">07</span><h3>Plan and critical-path exceptions</h3><p>Plan mode routes write operations for approval regardless of allow rules. Some user-interaction tools and recognized critical-path removals are not automatically approved. This application never tests critical-path removal, production pushes or unrelated shell operations.</p></article><article class="card"><span class="number">08</span><h3>Cost and isolation</h3><p>Each real model query uses an SDK budget threshold of $0.25, not a prepaid cap. A fresh bounded workspace and exact operation guard constrain the demonstration; SDK permission settings alone are not an operating-system sandbox. Credentials and all teaching media remain outside Git.</p></article></div><section class="step workflow-step" id="workflow-step-01"><span class="number">01</span><h3>1. Validate the prediction and experiment</h3><p>Only fixed classroom modes and execute/block predictions are accepted. Browser input cannot supply arbitrary tool commands, paths or permission rules.</p><p class="source">Source: src/permissions.ts · lines 88–94 · selected source; surrounding code omitted</p><pre><code class="language-typescript">export function validateConfig(value: unknown): RunConfig {
+  if (
+    !value ||
+    typeof value !== &quot;object&quot; ||
+    Array.isArray(value) ||
+    !MODES.includes((value as RunConfig).mode)
+  )</code></pre></section><section class="step workflow-step" id="workflow-step-02"><span class="number">02</span><h3>2. Prepare a disposable workspace</h3><p>A verified temporary run directory contains a protected fixture and an initially absent output. Agent operations do not use the lesson repository as their working directory.</p><p class="source">Source: src/workspace.ts · lines 9–16 · selected source; surrounding code omitted</p><pre><code class="language-typescript">const root = resolve(parent, randomUUID()),
+    cwd = join(root, &quot;project&quot;),
+    home = join(root, &quot;home&quot;),
+    sdkHome = join(root, &quot;sdk&quot;);
+  const rel = relative(parent, root);
+  if (!rel || rel.startsWith(&quot;..&quot;) || isAbsolute(rel))
+    throw new Error(&quot;Invalid classroom workspace.&quot;);
+  for (const dir of [cwd, home, sdkHome]) await mkdir(dir, { recursive: true });</code></pre></section><section class="step workflow-step" id="workflow-step-03"><span class="number">03</span><h3>3. Configure scoped rules and mode</h3><p>Pass the chosen allow/deny rules, ask settings and permission mode into the real SDK. Bare deny names remove tools; this lesson uses a scoped Bash deny so the attempt remains observable.</p><p class="source">Source: src/agent.ts · lines 55–61 · selected source; surrounding code omitted</p><pre><code class="language-typescript">allowedTools: s.allowed,
+    disallowedTools: s.denied,
+    settings: { permissions: { ask: s.ask } },
+    settingSources: [],
+    skills: [],
+    plugins: [],
+    strictMcpConfig: true,</code></pre></section><section class="step workflow-step" id="workflow-step-04"><span class="number">04</span><h3>4. Guard the exact classroom operation</h3><p>The host permits only exact fixture-removal command forms or the fixed output write. This boundary narrows the teaching exercise; it is not presented as an operating-system sandbox.</p><p class="source">Source: src/permissions.ts · lines 118–124 · selected source; surrounding code omitted</p><pre><code class="language-typescript">const target = resolve(cwd, &quot;permission-target.txt&quot;).replaceAll(&quot;\\&quot;, &quot;/&quot;);
+    const command = String(input.command).replaceAll(&quot;\\&quot;, &quot;/&quot;);
+    return (
+      name === &quot;Bash&quot; &amp;&amp;
+      [
+        &quot;rm -f permission-target.txt&quot;,
+        `rm -f &quot;${target}&quot;`,</code></pre></section><section class="step workflow-step" id="workflow-step-05"><span class="number">05</span><h3>5. Record the PreToolUse decision</h3><p>The hook denies the hook experiment, allows the bounded deny-rule experiment onward, or returns no decision for the remaining allowed classroom operation.</p><p class="source">Source: src/agent.ts · lines 92–99 · selected source; surrounding code omitted</p><pre><code class="language-typescript">const decision =
+                !allowed || c.mode === &quot;hook-deny&quot;
+                  ? &quot;deny&quot;
+                  : c.mode === &quot;deny-bypass&quot;
+                    ? &quot;allow&quot;
+                    : &quot;pass&quot;;
+              record({ phase: &quot;hook&quot;, tool: input.tool_name, decision });
+              if (decision === &quot;pass&quot;) return {};</code></pre></section><section class="step workflow-step" id="workflow-step-06"><span class="number">06</span><h3>6. Keep deny stronger than bypass</h3><p>The reference configuration combines a scoped Bash deny, a matching allow and bypass mode. The live evidence must show a hook allow, no successful removal and an unchanged fixture.</p><p class="source">Source: src/permissions.ts · lines 39–46 · selected source; surrounding code omitted</p><pre><code class="language-typescript">&quot;deny-bypass&quot;: {
+    stage: &quot;Scoped deny rule&quot;,
+    outcome: &quot;block&quot;,
+    mode: &quot;bypassPermissions&quot;,
+    allowed: [&quot;Bash(rm *)&quot;],
+    denied: [&quot;Bash(rm *)&quot;],
+    ask: [],
+  },</code></pre></section><section class="step workflow-step" id="workflow-step-07"><span class="number">07</span><h3>7. Force the ask-rule callback</h3><p>The Write ask rule routes bypass-mode Write to this host callback. Only the fixed ask-bypass operation is allowed here; unresolved calls in other modes are denied.</p><p class="source">Source: src/agent.ts · lines 131–138 · selected source; surrounding code omitted</p><pre><code class="language-typescript">canUseTool: async (name, input) =&gt; {
+      const allow =
+        c.mode === &quot;ask-bypass&quot; &amp;&amp;
+        hostAllows(workspace.cwd, c.mode, name, input);
+      record({
+        phase: &quot;callback&quot;,
+        tool: name,
+        decision: allow ? &quot;allow&quot; : &quot;deny&quot;,</code></pre></section><section class="step workflow-step" id="workflow-step-08"><span class="number">08</span><h3>8. Start the real model query</h3><p>The host supplies one bounded task and the fresh workspace. The model must make the actual tool attempt and accept denial without another approach.</p><p class="source">Source: src/agent.ts · lines 205–211 · selected source; surrounding code omitted</p><pre><code class="language-typescript">const run = query({
+    prompt:
+      PROMPTS[c.mode] +
+      `\nCurrent classroom directory: ${workspace.cwd}\nAllowed output file: ${join(workspace.cwd, &quot;result.txt&quot;)}`,
+    options,
+  });
+  const names = new Map&lt;string, string&gt;();</code></pre></section><section class="step workflow-step" id="workflow-step-09"><span class="number">09</span><h3>9. Capture actual tool requests</h3><p>Record real tool-use IDs, names and inputs. A tool request is an attempt, not proof that the permission pipeline allowed it to execute.</p><p class="source">Source: src/agent.ts · lines 232–235 · selected source; surrounding code omitted</p><pre><code class="language-typescript">if (block.type === &quot;tool_use&quot;) {
+            names.set(block.id, block.name);
+            emit({ type: &quot;tool&quot;, name: block.name, args: block.input });
+          }</code></pre></section><section class="step workflow-step" id="workflow-step-10"><span class="number">10</span><h3>10. Capture native denial feedback</h3><p>Native tool-result errors remain visible. A permission rejection is distinct from a crashed query, and the model may still finish with a successful explanation.</p><p class="source">Source: src/agent.ts · lines 240–246 · selected source; surrounding code omitted</p><pre><code class="language-typescript">if (block.is_error) nativeErrors++;
+            emit({
+              type: &quot;native-result&quot;,
+              name: names.get(block.tool_use_id) || block.tool_use_id,
+              isError: Boolean(block.is_error),
+              content: JSON.parse(redact(JSON.stringify(block.content))),
+            });</code></pre></section><section class="step workflow-step" id="workflow-step-11"><span class="number">11</span><h3>11. Observe successful completion</h3><p>PostToolUse marks successful tool completion. Compare it with callback counts to see whether an earlier permission stage approved the operation.</p><p class="source">Source: src/agent.ts · lines 118–124 · selected source; surrounding code omitted</p><pre><code class="language-typescript">completed.push(input.tool_name);
+                record({
+                  phase: &quot;post&quot;,
+                  tool: input.tool_name,
+                  decision: &quot;completed&quot;,
+                });
+              }</code></pre></section><section class="step workflow-step" id="workflow-step-12"><span class="number">12</span><h3>12. Verify files independently</h3><p>The host compares actual output content and protected fixture state before cleanup. This check does not rely on the model claiming success.</p><p class="source">Source: src/workspace.ts · lines 32–35 · selected source; surrounding code omitted</p><pre><code class="language-typescript">fileCreated: fileContents !== null,
+        fileContents,
+        protectedFixtureUnchanged: fixture === FIXTURE,
+      };</code></pre></section><section class="step workflow-step" id="workflow-step-13"><span class="number">13</span><h3>13. Render prediction feedback</h3><p>Render the actual outcome and compare it with the student prediction. Keep reference expectations separate from recorded hook and callback events.</p><p class="source">Source: src/client.ts · lines 63–65 · selected source; surrounding code omitted</p><pre><code class="language-typescript">$(&quot;verdict&quot;).textContent =
+      `Observed: ${e.observedOutcome}. Prediction: ${e.prediction || &quot;not provided&quot;}. ` +
+      feedback;</code></pre></section><footer>CLAUDE AGENT SDK · LESSON 27 · HOOKS · RULES · MODES · CALLBACK<br>TypeScript · local runtime · API key stays on the server</footer></main><script src="/navigation.js"></script><script src="/prism.js"></script><script src="/prism-markup.min.js"></script><script src="/prism-yaml.min.js"></script><script src="/prism-markdown.min.js"></script><script src="/prism-python.min.js"></script><script src="/code-highlighting.js"></script><script src="/marked.umd.js"></script><script src="/purify.min.js"></script></body></html>

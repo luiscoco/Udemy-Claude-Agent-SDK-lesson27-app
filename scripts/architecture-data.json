@@ -1,0 +1,273 @@
+{
+  "lanes": [
+    "Student UI",
+    "TypeScript host",
+    "SDK pipeline",
+    "Host callback",
+    "Lab files"
+  ],
+  "arrows": [
+    [
+      0,
+      1,
+      "1. Validate the prediction and experiment"
+    ],
+    [
+      1,
+      4,
+      "2. Prepare a disposable workspace"
+    ],
+    [
+      1,
+      2,
+      "3. Configure scoped rules and mode"
+    ],
+    [
+      1,
+      1,
+      "4. Guard the exact classroom operation"
+    ],
+    [
+      2,
+      1,
+      "5. Record the PreToolUse decision"
+    ],
+    [
+      2,
+      2,
+      "6. Keep deny stronger than bypass"
+    ],
+    [
+      2,
+      1,
+      "7. Force the ask-rule callback"
+    ],
+    [
+      1,
+      2,
+      "8. Start the real model query"
+    ],
+    [
+      2,
+      1,
+      "9. Capture actual tool requests"
+    ],
+    [
+      2,
+      0,
+      "10. Capture native denial feedback"
+    ],
+    [
+      2,
+      1,
+      "11. Observe successful completion"
+    ],
+    [
+      4,
+      1,
+      "12. Verify files independently"
+    ],
+    [
+      1,
+      0,
+      "13. Render prediction feedback"
+    ]
+  ],
+  "steps": [
+    {
+      "number": 1,
+      "title": "Validate the prediction and experiment",
+      "source": "src/permissions.ts",
+      "code": "export function validateConfig(value: unknown): RunConfig {\n  if (\n    !value ||\n    typeof value !== \"object\" ||\n    Array.isArray(value) ||\n    !MODES.includes((value as RunConfig).mode)\n  )",
+      "language": "typescript",
+      "explanation": "Only fixed classroom modes and execute/block predictions are accepted. Browser input cannot supply arbitrary tool commands, paths or permission rules.",
+      "firstLine": 88,
+      "lastLine": 94,
+      "anchors": [
+        "export function validateConfig(value: unknown): RunConfig {"
+      ],
+      "sourceSHA256": "fbe0a38b358d1cedc7380851c77548138ad9845f5f314449bedf617f5528d7e0",
+      "narration": "Step 1. Only fixed classroom modes and execute/block predictions are accepted. Browser input cannot supply arbitrary tool commands, paths or permission rules. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 2,
+      "title": "Prepare a disposable workspace",
+      "source": "src/workspace.ts",
+      "code": "const root = resolve(parent, randomUUID()),\n    cwd = join(root, \"project\"),\n    home = join(root, \"home\"),\n    sdkHome = join(root, \"sdk\");\n  const rel = relative(parent, root);\n  if (!rel || rel.startsWith(\"..\") || isAbsolute(rel))\n    throw new Error(\"Invalid classroom workspace.\");\n  for (const dir of [cwd, home, sdkHome]) await mkdir(dir, { recursive: true });",
+      "language": "typescript",
+      "explanation": "A verified temporary run directory contains a protected fixture and an initially absent output. Agent operations do not use the lesson repository as their working directory.",
+      "firstLine": 9,
+      "lastLine": 16,
+      "anchors": [
+        "const root = resolve(parent, randomUUID()),"
+      ],
+      "sourceSHA256": "a4057b96a936467963d10a97ad899e3e9bc4ac625f97cfaf7e539f2da76f6671",
+      "narration": "Step 2. A verified temporary run directory contains a protected fixture and an initially absent output. Agent operations do not use the lesson repository as their working directory. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 3,
+      "title": "Configure scoped rules and mode",
+      "source": "src/agent.ts",
+      "code": "allowedTools: s.allowed,\n    disallowedTools: s.denied,\n    settings: { permissions: { ask: s.ask } },\n    settingSources: [],\n    skills: [],\n    plugins: [],\n    strictMcpConfig: true,",
+      "language": "typescript",
+      "explanation": "Pass the chosen allow/deny rules, ask settings and permission mode into the real SDK. Bare deny names remove tools; this lesson uses a scoped Bash deny so the attempt remains observable.",
+      "firstLine": 55,
+      "lastLine": 61,
+      "anchors": [
+        "allowedTools: s.allowed,"
+      ],
+      "sourceSHA256": "cd1e34400831413f2db29b1e8d9c9b07a5f215420df09dfc61465507776578ac",
+      "narration": "Step 3. Pass the chosen allow/deny rules, ask settings and permission mode into the real SDK. Bare deny names remove tools; this lesson uses a scoped Bash deny so the attempt remains observable. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 4,
+      "title": "Guard the exact classroom operation",
+      "source": "src/permissions.ts",
+      "code": "const target = resolve(cwd, \"permission-target.txt\").replaceAll(\"\\\\\", \"/\");\n    const command = String(input.command).replaceAll(\"\\\\\", \"/\");\n    return (\n      name === \"Bash\" &&\n      [\n        \"rm -f permission-target.txt\",\n        `rm -f \"${target}\"`,",
+      "language": "typescript",
+      "explanation": "The host permits only exact fixture-removal command forms or the fixed output write. This boundary narrows the teaching exercise; it is not presented as an operating-system sandbox.",
+      "firstLine": 118,
+      "lastLine": 124,
+      "anchors": [
+        "const target = resolve(cwd, \"permission-target.txt\").replaceAll(\"\\\\\", \"/\");"
+      ],
+      "sourceSHA256": "fbe0a38b358d1cedc7380851c77548138ad9845f5f314449bedf617f5528d7e0",
+      "narration": "Step 4. The host permits only exact fixture-removal command forms or the fixed output write. This boundary narrows the teaching exercise; it is not presented as an operating-system sandbox. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 5,
+      "title": "Record the PreToolUse decision",
+      "source": "src/agent.ts",
+      "code": "const decision =\n                !allowed || c.mode === \"hook-deny\"\n                  ? \"deny\"\n                  : c.mode === \"deny-bypass\"\n                    ? \"allow\"\n                    : \"pass\";\n              record({ phase: \"hook\", tool: input.tool_name, decision });\n              if (decision === \"pass\") return {};",
+      "language": "typescript",
+      "explanation": "The hook denies the hook experiment, allows the bounded deny-rule experiment onward, or returns no decision for the remaining allowed classroom operation.",
+      "firstLine": 92,
+      "lastLine": 99,
+      "anchors": [
+        "const decision ="
+      ],
+      "sourceSHA256": "cd1e34400831413f2db29b1e8d9c9b07a5f215420df09dfc61465507776578ac",
+      "narration": "Step 5. The hook denies the hook experiment, allows the bounded deny-rule experiment onward, or returns no decision for the remaining allowed classroom operation. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 6,
+      "title": "Keep deny stronger than bypass",
+      "source": "src/permissions.ts",
+      "code": "\"deny-bypass\": {\n    stage: \"Scoped deny rule\",\n    outcome: \"block\",\n    mode: \"bypassPermissions\",\n    allowed: [\"Bash(rm *)\"],\n    denied: [\"Bash(rm *)\"],\n    ask: [],\n  },",
+      "language": "typescript",
+      "explanation": "The reference configuration combines a scoped Bash deny, a matching allow and bypass mode. The live evidence must show a hook allow, no successful removal and an unchanged fixture.",
+      "firstLine": 39,
+      "lastLine": 46,
+      "anchors": [
+        "\"deny-bypass\": {"
+      ],
+      "sourceSHA256": "fbe0a38b358d1cedc7380851c77548138ad9845f5f314449bedf617f5528d7e0",
+      "narration": "Step 6. The reference configuration combines a scoped Bash deny, a matching allow and bypass mode. The live evidence must show a hook allow, no successful removal and an unchanged fixture. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 7,
+      "title": "Force the ask-rule callback",
+      "source": "src/agent.ts",
+      "code": "canUseTool: async (name, input) => {\n      const allow =\n        c.mode === \"ask-bypass\" &&\n        hostAllows(workspace.cwd, c.mode, name, input);\n      record({\n        phase: \"callback\",\n        tool: name,\n        decision: allow ? \"allow\" : \"deny\",",
+      "language": "typescript",
+      "explanation": "The Write ask rule routes bypass-mode Write to this host callback. Only the fixed ask-bypass operation is allowed here; unresolved calls in other modes are denied.",
+      "firstLine": 131,
+      "lastLine": 138,
+      "anchors": [
+        "canUseTool: async (name, input) => {"
+      ],
+      "sourceSHA256": "cd1e34400831413f2db29b1e8d9c9b07a5f215420df09dfc61465507776578ac",
+      "narration": "Step 7. The Write ask rule routes bypass-mode Write to this host callback. Only the fixed ask-bypass operation is allowed here; unresolved calls in other modes are denied. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 8,
+      "title": "Start the real model query",
+      "source": "src/agent.ts",
+      "code": "const run = query({\n    prompt:\n      PROMPTS[c.mode] +\n      `\\nCurrent classroom directory: ${workspace.cwd}\\nAllowed output file: ${join(workspace.cwd, \"result.txt\")}`,\n    options,\n  });\n  const names = new Map<string, string>();",
+      "language": "typescript",
+      "explanation": "The host supplies one bounded task and the fresh workspace. The model must make the actual tool attempt and accept denial without another approach.",
+      "firstLine": 205,
+      "lastLine": 211,
+      "anchors": [
+        "const run = query({"
+      ],
+      "sourceSHA256": "cd1e34400831413f2db29b1e8d9c9b07a5f215420df09dfc61465507776578ac",
+      "narration": "Step 8. The host supplies one bounded task and the fresh workspace. The model must make the actual tool attempt and accept denial without another approach. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 9,
+      "title": "Capture actual tool requests",
+      "source": "src/agent.ts",
+      "code": "if (block.type === \"tool_use\") {\n            names.set(block.id, block.name);\n            emit({ type: \"tool\", name: block.name, args: block.input });\n          }",
+      "language": "typescript",
+      "explanation": "Record real tool-use IDs, names and inputs. A tool request is an attempt, not proof that the permission pipeline allowed it to execute.",
+      "firstLine": 232,
+      "lastLine": 235,
+      "anchors": [
+        "if (block.type === \"tool_use\") {"
+      ],
+      "sourceSHA256": "cd1e34400831413f2db29b1e8d9c9b07a5f215420df09dfc61465507776578ac",
+      "narration": "Step 9. Record real tool-use IDs, names and inputs. A tool request is an attempt, not proof that the permission pipeline allowed it to execute. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 10,
+      "title": "Capture native denial feedback",
+      "source": "src/agent.ts",
+      "code": "if (block.is_error) nativeErrors++;\n            emit({\n              type: \"native-result\",\n              name: names.get(block.tool_use_id) || block.tool_use_id,\n              isError: Boolean(block.is_error),\n              content: JSON.parse(redact(JSON.stringify(block.content))),\n            });",
+      "language": "typescript",
+      "explanation": "Native tool-result errors remain visible. A permission rejection is distinct from a crashed query, and the model may still finish with a successful explanation.",
+      "firstLine": 240,
+      "lastLine": 246,
+      "anchors": [
+        "if (block.is_error) nativeErrors++;"
+      ],
+      "sourceSHA256": "cd1e34400831413f2db29b1e8d9c9b07a5f215420df09dfc61465507776578ac",
+      "narration": "Step 10. Native tool-result errors remain visible. A permission rejection is distinct from a crashed query, and the model may still finish with a successful explanation. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 11,
+      "title": "Observe successful completion",
+      "source": "src/agent.ts",
+      "code": "completed.push(input.tool_name);\n                record({\n                  phase: \"post\",\n                  tool: input.tool_name,\n                  decision: \"completed\",\n                });\n              }",
+      "language": "typescript",
+      "explanation": "PostToolUse marks successful tool completion. Compare it with callback counts to see whether an earlier permission stage approved the operation.",
+      "firstLine": 118,
+      "lastLine": 124,
+      "anchors": [
+        "completed.push(input.tool_name);"
+      ],
+      "sourceSHA256": "cd1e34400831413f2db29b1e8d9c9b07a5f215420df09dfc61465507776578ac",
+      "narration": "Step 11. PostToolUse marks successful tool completion. Compare it with callback counts to see whether an earlier permission stage approved the operation. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 12,
+      "title": "Verify files independently",
+      "source": "src/workspace.ts",
+      "code": "fileCreated: fileContents !== null,\n        fileContents,\n        protectedFixtureUnchanged: fixture === FIXTURE,\n      };",
+      "language": "typescript",
+      "explanation": "The host compares actual output content and protected fixture state before cleanup. This check does not rely on the model claiming success.",
+      "firstLine": 32,
+      "lastLine": 35,
+      "anchors": [
+        "fileCreated: fileContents !== null,"
+      ],
+      "sourceSHA256": "a4057b96a936467963d10a97ad899e3e9bc4ac625f97cfaf7e539f2da76f6671",
+      "narration": "Step 12. The host compares actual output content and protected fixture state before cleanup. This check does not rely on the model claiming success. This source excerpt shows the corresponding application statement."
+    },
+    {
+      "number": 13,
+      "title": "Render prediction feedback",
+      "source": "src/client.ts",
+      "code": "$(\"verdict\").textContent =\n      `Observed: ${e.observedOutcome}. Prediction: ${e.prediction || \"not provided\"}. ` +\n      feedback;",
+      "language": "typescript",
+      "explanation": "Render the actual outcome and compare it with the student prediction. Keep reference expectations separate from recorded hook and callback events.",
+      "firstLine": 63,
+      "lastLine": 65,
+      "anchors": [
+        "$(\"verdict\").textContent ="
+      ],
+      "sourceSHA256": "9cc207713e4037156b46d9350d4d8258ea833a1ba1c5f782fe8510582e6a3681",
+      "narration": "Step 13. Render the actual outcome and compare it with the student prediction. Keep reference expectations separate from recorded hook and callback events. This source excerpt shows the corresponding application statement."
+    }
+  ]
+}
